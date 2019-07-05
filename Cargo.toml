@@ -1,0 +1,9 @@
+[package]
+name = "raytracer"
+version = "0.1.0"
+authors = ["Jakub Stasiak <jakub@stasiak.at>"]
+edition = "2018"
+license = "MIT"
+description = "A toy raytracer"
+
+[dependencies]
