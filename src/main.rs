@@ -24,7 +24,22 @@ fn main() {
 }
 
 fn render(width: usize, height: usize) -> Image {
-    Image::new(width, height)
+    let mut image = Image::new(width, height);
+    let max = (width * height) as f32;
+    for i in 0..width {
+        for j in 0..height {
+            image.set_color(
+                i,
+                j,
+                Color::new(
+                    i as f32 / width as f32,
+                    j as f32 / height as f32,
+                    i as f32 * j as f32 / max,
+                ),
+            );
+        }
+    }
+    image
 }
 
 fn image_to_file(image: &Image, w: &mut Write) {
