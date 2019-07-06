@@ -7,7 +7,7 @@ addons:
 cache:
   directories:
     - $HOME/.cargo
-before-cache:
+before_cache:
   - rm -rf $HOME/.cargo/registry
   - cargo install cargo-tarpaulin -f
 script:
