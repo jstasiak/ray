@@ -8,8 +8,8 @@ cache:
   directories:
     - $HOME/.cargo
 before_cache:
+  - cargo install cargo-tarpaulin
   - rm -rf $HOME/.cargo/registry
-  - cargo install cargo-tarpaulin -f
 script:
   - cargo clean
   - cargo build
