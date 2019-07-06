@@ -1,9 +1,18 @@
-sudo: false
+sudo: required
 language: rust
+addons:
+  apt:
+    packages:
+      - libssl-dev
 cache:
   directories:
     - $HOME/.cargo
-before-cache:
+before_cache:
   - rm -rf $HOME/.cargo/registry
+  - cargo install cargo-tarpaulin -f
 script:
+  - cargo clean
+  - cargo build
   - cargo test
+after_success:
+  - cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
