@@ -281,20 +281,21 @@ pub fn posunit_to_unit(value: f32) -> f32 {
 
 pub struct Radians(pub f32);
 
-pub fn render(width: usize, height: usize) -> Image {
+pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) -> Image {
     let mut image = Image::new(width, height);
-    let max = (width * height) as f32;
     for i in 0..width {
         for j in 0..height {
-            image.set_color(
-                i,
-                j,
-                Color::new(
-                    i as f32 / width as f32,
-                    j as f32 / height as f32,
-                    i as f32 * j as f32 / max,
-                ),
+            // -1s here because we want to provide x and y coordinates between 0 and 1 inclusive
+            let ray = camera.screen_ray(
+                i as f32 / (width - 1) as f32,
+                j as f32 / (height - 1) as f32,
             );
+            let intersection = closest_intersection(&spheres, &ray);
+            let color = match intersection {
+                Intersection::None => Color::new_black(),
+                Intersection::Hit(_) => Color::new_red(),
+            };
+            image.set_color(i, j, color);
         }
     }
     image
@@ -389,5 +390,9 @@ impl Color {
 
     pub fn new_black() -> Color {
         Self::new(0.0, 0.0, 0.0)
+    }
+
+    pub fn new_red() -> Color {
+        Self::new(1.0, 0.0, 0.0)
     }
 }
