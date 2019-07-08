@@ -7,6 +7,8 @@ addons:
 cache:
   directories:
     - $HOME/.cargo
+before_install:
+  - rustup component add rustfmt
 before_cache:
   - cargo install cargo-tarpaulin
   - rm -rf $HOME/.cargo/registry
@@ -14,5 +16,6 @@ script:
   - cargo clean
   - cargo build
   - cargo test
+  - cargo fmt -- --check
 after_success:
   - cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
