@@ -1,4 +1,4 @@
-use raytracer::{image_to_file, render};
+use raytracer::{image_to_file, render, Camera, Radians, Sphere, Vector};
 use std::env;
 use std::fs::File;
 use std::io::{self, Write};
@@ -20,6 +20,39 @@ fn main() {
         _ => Box::new(File::create(filename).expect("Cannot open file for writing")),
     };
 
-    let image = render(200, 100);
+    let spheres = [
+        Sphere {
+            center: Vector {
+                x: 0.0,
+                y: 0.0,
+                z: -5.0,
+            },
+            radius: 1.0,
+        },
+        Sphere {
+            center: Vector {
+                x: -3.0,
+                y: 1.0,
+                z: -5.0,
+            },
+            radius: 1.0,
+        },
+        Sphere {
+            center: Vector {
+                x: 5.0,
+                y: 1.0,
+                z: -10.0,
+            },
+            radius: 1.0,
+        },
+    ];
+    let camera = Camera {
+        position: Vector::zero(),
+        forward: -Vector::unitz(),
+        up: Vector::unity(),
+        aspect_ratio: 4.0 / 3.0,
+        fovx: Radians(90.0f32.to_radians()),
+    };
+    let image = render(&spheres, &camera, 800, 600);
     image_to_file(&image, &mut file);
 }
