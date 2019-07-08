@@ -1,4 +1,4 @@
-use raytracer::{almost_equal, Intersection, Ray, Sphere, Vector};
+use raytracer::{almost_equal, Camera, Intersection, Radians, Ray, Sphere, Vector};
 
 #[test]
 fn test_add() {
@@ -124,6 +124,22 @@ fn test_vector_cross_product() {
 }
 
 #[test]
+fn test_vector_normalization() {
+    let original = Vector {
+        x: 1.0,
+        y: 2.0,
+        z: 3.0,
+    };
+    let expected = Vector {
+        x: 0.2672612419124244,
+        y: 0.5345224838248488,
+        z: 0.8017837257372732,
+    };
+    let got = original.normalized();
+    assert!(got.almost_equal(&expected), "Got: {:?}", got);
+}
+
+#[test]
 fn test_sphere_ray_intersection() {
     let sphere = Sphere {
         center: Vector::zero(),
@@ -185,5 +201,59 @@ fn test_sphere_ray_intersection() {
         intersection3.almost_equal(&Intersection::None),
         "Got: {:?}",
         intersection3
+    );
+}
+
+#[test]
+fn test_camera_screen_ray() {
+    let camera = Camera {
+        position: Vector::zero(),
+        forward: -Vector::unitz(),
+        up: Vector::unity(),
+        aspect_ratio: 2.0 / 1.0,
+        fovx: Radians(90.0f32.to_radians()),
+    };
+
+    let expected_top_left_corner_ray = Ray {
+        pos: Vector::zero(),
+        dir: Vector {
+            x: -1.0,
+            y: 0.5,
+            z: -1.0,
+        }
+        .normalized(),
+    };
+    let got_top_left_corner_ray = camera.screen_ray(0.0, 0.0);
+    assert!(
+        got_top_left_corner_ray.almost_equal(&expected_top_left_corner_ray),
+        "Got: {:?}",
+        got_top_left_corner_ray
+    );
+
+    let expected_center_screen_ray = Ray {
+        pos: Vector::zero(),
+        dir: -Vector::unitz(),
+    };
+    let got_center_screen_ray = camera.screen_ray(0.5, 0.5);
+    assert!(
+        got_center_screen_ray.almost_equal(&expected_center_screen_ray),
+        "Got: {:?}",
+        got_center_screen_ray
+    );
+
+    let expected_quarter_screen_ray = Ray {
+        pos: Vector::zero(),
+        dir: Vector {
+            x: -0.5,
+            y: 0.25,
+            z: -1.0,
+        }
+        .normalized(),
+    };
+    let got_quarter_screen_ray = camera.screen_ray(0.25, 0.25);
+    assert!(
+        got_quarter_screen_ray.almost_equal(&expected_quarter_screen_ray),
+        "Got: {:?}",
+        got_quarter_screen_ray
     );
 }

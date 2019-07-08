@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vector {
@@ -9,7 +9,7 @@ pub struct Vector {
 
 impl Vector {
     pub fn almost_equal(&self, other: &Vector) -> bool {
-        self.almost_equal_with_epsilon(other, 0.00000001)
+        self.almost_equal_with_epsilon(other, 0.0000001)
     }
 
     pub fn almost_equal_with_epsilon(&self, other: &Vector, epsilon: f32) -> bool {
@@ -23,6 +23,30 @@ impl Vector {
             x: 0.0,
             y: 0.0,
             z: 0.0,
+        }
+    }
+
+    pub fn unitx() -> Vector {
+        Vector {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+        }
+    }
+
+    pub fn unity() -> Vector {
+        Vector {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        }
+    }
+
+    pub fn unitz() -> Vector {
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
         }
     }
 
@@ -40,6 +64,15 @@ impl Vector {
 
     pub fn len(&self) -> f32 {
         (self.x.powf(2.0) + self.y.powf(2.0) + self.z.powf(2.0)).sqrt()
+    }
+
+    pub fn normalized(&self) -> Vector {
+        let len = self.len();
+        Vector {
+            x: self.x / len,
+            y: self.y / len,
+            z: self.z / len,
+        }
     }
 }
 
@@ -95,7 +128,19 @@ impl Div<f32> for Vector {
     }
 }
 
-#[derive(Copy, Clone)]
+impl Neg for Vector {
+    type Output = Vector;
+
+    fn neg(self) -> Vector {
+        Vector {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
 pub struct Ray {
     pub pos: Vector,
     pub dir: Vector,
@@ -107,6 +152,10 @@ impl Ray {
             pos: self.pos + self.dir * distance,
             dir: self.dir,
         }
+    }
+
+    pub fn almost_equal(&self, other: &Ray) -> bool {
+        self.pos.almost_equal(&other.pos) && self.dir.almost_equal(&other.dir)
     }
 }
 
@@ -177,9 +226,56 @@ impl Intersection {
 }
 
 pub fn almost_equal(a: f32, b: f32) -> bool {
-    almost_equal_with_epsilon(a, b, 0.00000001)
+    almost_equal_with_epsilon(a, b, 0.0000001)
 }
 
 pub fn almost_equal_with_epsilon(a: f32, b: f32, epsilon: f32) -> bool {
     (a - b).abs() < epsilon
 }
+
+pub struct Camera {
+    pub position: Vector,
+    // The forward and up vectors have to be normalized
+    pub forward: Vector,
+    pub up: Vector,
+    pub aspect_ratio: f32,
+    pub fovx: Radians,
+}
+
+impl Camera {
+    pub fn screen_ray(&self, x: f32, y: f32) -> Ray {
+        // We assume that a screen lies 1 unit in front of the camera. The center (x: 0.5, y: 0.5) of the screen
+        // lies directly on the forward axis.
+        assert!(0.0 <= x && x <= 1.0);
+        assert!(0.0 <= y && y <= 1.0);
+        let right = self.forward.cross(&self.up);
+        // top left corner is x -1.0, y 1.0
+        let xunit = posunit_to_unit(x);
+        let yunit = -posunit_to_unit(y);
+        // The distance between a point on the screen and the center of the screen forms a right
+        // triangle with the distance between the camera and the center of the screen and the
+        // distance between the camera and the point. Since we know the maximum angle we can go in
+        // either direction (fovx/2 for x, fovy/2 for y) we first calculate the size of the screen
+        // 1 unit in front of the camera using tangent:
+        let screen_width = 2.0 * (self.fovx.0 / 2.0).tan();
+        let screen_height = screen_width / self.aspect_ratio;
+        // What's left now is to calculate the point at the screen we're looking at and a ray
+        // pointing to it:
+        let point_at_screen = self.position
+            + self.forward
+            + right * xunit * screen_width / 2.0
+            + self.up * yunit * screen_height / 2.0;
+        let ray = Ray {
+            pos: self.position,
+            dir: (point_at_screen - self.position).normalized(),
+        };
+        ray
+    }
+}
+
+pub fn posunit_to_unit(value: f32) -> f32 {
+    // Convert value in range [0.0, 1.0] to value in range [-1.0, 1.0]
+    value * 2.0 - 1.0
+}
+
+pub struct Radians(pub f32);
