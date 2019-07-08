@@ -27,28 +27,28 @@ impl Vector {
         }
     }
 
-    pub fn unitx() -> Vector {
-        Vector {
+    pub fn unitx() -> UnitVector {
+        UnitVector(Vector {
             x: 1.0,
             y: 0.0,
             z: 0.0,
-        }
+        })
     }
 
-    pub fn unity() -> Vector {
-        Vector {
+    pub fn unity() -> UnitVector {
+        UnitVector(Vector {
             x: 0.0,
             y: 1.0,
             z: 0.0,
-        }
+        })
     }
 
-    pub fn unitz() -> Vector {
-        Vector {
+    pub fn unitz() -> UnitVector {
+        UnitVector(Vector {
             x: 0.0,
             y: 0.0,
             z: 1.0,
-        }
+        })
     }
 
     pub fn dot(&self, other: &Vector) -> f32 {
@@ -67,13 +67,27 @@ impl Vector {
         (self.x.powf(2.0) + self.y.powf(2.0) + self.z.powf(2.0)).sqrt()
     }
 
-    pub fn normalized(&self) -> Vector {
+    pub fn normalized(&self) -> UnitVector {
         let len = self.len();
-        Vector {
+        UnitVector(Vector {
             x: self.x / len,
             y: self.y / len,
             z: self.z / len,
-        }
+        })
+    }
+    pub fn is_normalized(&self) -> bool {
+        almost_equal(self.len(), 1.0)
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct UnitVector(pub Vector);
+
+impl Neg for UnitVector {
+    type Output = UnitVector;
+
+    fn neg(self) -> UnitVector {
+        UnitVector(-self.0)
     }
 }
 
@@ -144,19 +158,19 @@ impl Neg for Vector {
 #[derive(Copy, Clone, Debug)]
 pub struct Ray {
     pub pos: Vector,
-    pub dir: Vector,
+    pub dir: UnitVector,
 }
 
 impl Ray {
     fn forwarded(&self, distance: f32) -> Ray {
         Ray {
-            pos: self.pos + self.dir * distance,
+            pos: self.pos + self.dir.0 * distance,
             dir: self.dir,
         }
     }
 
     pub fn almost_equal(&self, other: &Ray) -> bool {
-        self.pos.almost_equal(&other.pos) && self.dir.almost_equal(&other.dir)
+        self.pos.almost_equal(&other.pos) && self.dir.0.almost_equal(&other.dir.0)
     }
 }
 
@@ -178,7 +192,7 @@ impl Sphere {
         }
         // tcenter is how far along the ray dir we need to go in order for the line orthogonal to
         // the ray to cross the sphere's center. Let's call that point on the ray C.
-        let tcenter = pos_to_center.dot(&ray.dir);
+        let tcenter = pos_to_center.dot(&ray.dir.0);
         // The sphere is in the opposite direction.
         if tcenter < 0.0 {
             return Intersection::None;
@@ -237,8 +251,8 @@ pub fn almost_equal_with_epsilon(a: f32, b: f32, epsilon: f32) -> bool {
 pub struct Camera {
     pub position: Vector,
     // The forward and up vectors have to be normalized
-    pub forward: Vector,
-    pub up: Vector,
+    pub forward: UnitVector,
+    pub up: UnitVector,
     pub aspect_ratio: f32,
     pub fovx: Radians,
 }
@@ -249,7 +263,7 @@ impl Camera {
         // lies directly on the forward axis.
         assert!(0.0 <= x && x <= 1.0);
         assert!(0.0 <= y && y <= 1.0);
-        let right = self.forward.cross(&self.up);
+        let right = self.forward.0.cross(&self.up.0);
         // top left corner is x -1.0, y 1.0
         let xunit = posunit_to_unit(x);
         let yunit = -posunit_to_unit(y);
@@ -263,9 +277,9 @@ impl Camera {
         // What's left now is to calculate the point at the screen we're looking at and a ray
         // pointing to it:
         let point_at_screen = self.position
-            + self.forward
+            + self.forward.0
             + right * xunit * screen_width / 2.0
-            + self.up * yunit * screen_height / 2.0;
+            + self.up.0 * yunit * screen_height / 2.0;
         let ray = Ray {
             pos: self.position,
             dir: (point_at_screen - self.position).normalized(),

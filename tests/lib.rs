@@ -1,5 +1,6 @@
 use raytracer::{
-    almost_equal, closest_intersection, Camera, Intersection, Radians, Ray, Sphere, Vector,
+    almost_equal, closest_intersection, Camera, Intersection, Radians, Ray, Sphere, UnitVector,
+    Vector,
 };
 
 #[test]
@@ -138,7 +139,7 @@ fn test_vector_normalization() {
         z: 0.8017837257372732,
     };
     let got = original.normalized();
-    assert!(got.almost_equal(&expected), "Got: {:?}", got);
+    assert!(got.0.almost_equal(&expected), "Got: {:?}", got);
 }
 
 #[test]
@@ -154,11 +155,11 @@ fn test_sphere_ray_intersection() {
             y: 0.0,
             z: 10.0,
         },
-        dir: Vector {
+        dir: UnitVector(Vector {
             x: 0.0,
             y: 0.0,
             z: 1.0,
-        },
+        }),
     };
     let intersection1 = sphere.intersect_ray(&outside_pointing_away);
     assert!(
@@ -173,11 +174,11 @@ fn test_sphere_ray_intersection() {
             y: 0.0,
             z: 10.0,
         },
-        dir: Vector {
+        dir: UnitVector(Vector {
             x: 0.0,
             y: 0.0,
             z: -1.0,
-        },
+        }),
     };
     let intersection2 = sphere.intersect_ray(&outside_pointing_towards);
     assert!(
@@ -192,11 +193,11 @@ fn test_sphere_ray_intersection() {
 
     let inside = Ray {
         pos: Vector::zero(),
-        dir: Vector {
+        dir: UnitVector(Vector {
             x: 1.0,
             y: 0.0,
             z: 0.0,
-        },
+        }),
     };
     let intersection3 = sphere.intersect_ray(&inside);
     assert!(
