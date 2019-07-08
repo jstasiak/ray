@@ -1,4 +1,4 @@
-use raytracer::Vector;
+use raytracer::{almost_equal, Intersection, Ray, Sphere, Vector};
 
 #[test]
 fn test_add() {
@@ -69,4 +69,100 @@ fn test_vector_scalar_division() {
             y: 1.0,
             z: 1.5
         }));
+}
+
+#[test]
+fn test_vector_dot_product() {
+    assert!(almost_equal(
+        Vector {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0
+        }
+        .dot(&Vector {
+            x: 0.0,
+            y: 1.0,
+            z: 1.0
+        }),
+        0.0
+    ));
+
+    assert!(almost_equal(
+        Vector {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0
+        }
+        .dot(&Vector {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0
+        }),
+        1.0
+    ));
+}
+
+#[test]
+fn test_sphere_ray_intersection() {
+    let sphere = Sphere {
+        center: Vector::zero(),
+        radius: 1.0,
+    };
+
+    let outside_pointing_away = Ray {
+        pos: Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 10.0,
+        },
+        dir: Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+        },
+    };
+    let intersection1 = sphere.intersect_ray(&outside_pointing_away);
+    assert!(
+        intersection1.almost_equal(&Intersection::None),
+        "Got: {:?}",
+        intersection1
+    );
+
+    let outside_pointing_towards = Ray {
+        pos: Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 10.0,
+        },
+        dir: Vector {
+            x: 0.0,
+            y: 0.0,
+            z: -1.0,
+        },
+    };
+    let intersection2 = sphere.intersect_ray(&outside_pointing_towards);
+    assert!(
+        intersection2.almost_equal(&Intersection::Hit(Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0
+        })),
+        "Got: {:?}",
+        intersection2
+    );
+
+    let inside = Ray {
+        pos: Vector::zero(),
+        dir: Vector {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+        },
+    };
+    let intersection3 = sphere.intersect_ray(&inside);
+    assert!(
+        intersection3.almost_equal(&Intersection::None),
+        "Got: {:?}",
+        intersection3
+    );
 }
