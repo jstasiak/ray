@@ -1,4 +1,6 @@
-use raytracer::{almost_equal, Camera, Intersection, Radians, Ray, Sphere, Vector};
+use raytracer::{
+    almost_equal, closest_intersection, Camera, Intersection, Radians, Ray, Sphere, Vector,
+};
 
 #[test]
 fn test_add() {
@@ -256,4 +258,77 @@ fn test_camera_screen_ray() {
         "Got: {:?}",
         got_quarter_screen_ray
     );
+}
+
+#[test]
+fn test_closest_intersection() {
+    let spheres = [
+        Sphere {
+            center: Vector::zero(),
+            radius: 1.0,
+        },
+        Sphere {
+            center: Vector {
+                x: 10.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            radius: 1.0,
+        },
+    ];
+    let expected_hit_from_negative_x = Intersection::Hit(Vector {
+        x: -1.0,
+        y: 0.0,
+        z: 0.0,
+    });
+    let got_hit_from_negative_x = closest_intersection(
+        &spheres,
+        &Ray {
+            pos: Vector {
+                x: -100.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            dir: Vector::unitx(),
+        },
+    );
+    assert!(
+        got_hit_from_negative_x.almost_equal(&expected_hit_from_negative_x),
+        "Got: {:?}",
+        got_hit_from_negative_x
+    );
+    let expected_hit_from_positive_x = Intersection::Hit(Vector {
+        x: 11.0,
+        y: 0.0,
+        z: 0.0,
+    });
+    let got_hit_from_positive_x = closest_intersection(
+        &spheres,
+        &Ray {
+            pos: Vector {
+                x: 100.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            dir: -Vector::unitx(),
+        },
+    );
+    assert!(
+        got_hit_from_positive_x.almost_equal(&expected_hit_from_positive_x),
+        "Got: {:?}",
+        got_hit_from_positive_x
+    );
+
+    assert!(closest_intersection(
+        &spheres,
+        &Ray {
+            pos: Vector {
+                x: 100.0,
+                y: 0.0,
+                z: 0.0
+            },
+            dir: Vector::unitx()
+        }
+    )
+    .almost_equal(&Intersection::None));
 }
