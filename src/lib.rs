@@ -300,6 +300,29 @@ pub fn render(width: usize, height: usize) -> Image {
     image
 }
 
+pub fn closest_intersection(spheres: &[Sphere], ray: &Ray) -> Intersection {
+    let mut hits = Vec::new();
+    for sphere in spheres {
+        match sphere.intersect_ray(&ray) {
+            Intersection::Hit(point) => hits.push(point),
+            Intersection::None => (),
+        }
+    }
+    if hits.len() == 0 {
+        return Intersection::None;
+    }
+    let mut closest = hits[0];
+    let mut closest_distance = (closest - ray.pos).len();
+    for hit in hits {
+        let distance = (hit - ray.pos).len();
+        if distance < closest_distance {
+            closest_distance = distance;
+            closest = hit;
+        }
+    }
+    Intersection::Hit(closest)
+}
+
 pub fn image_to_file(image: &Image, w: &mut Write) {
     write!(w, "P3\n{} {}\n255\n", image.width(), image.height()).expect("Cannot write");
 
