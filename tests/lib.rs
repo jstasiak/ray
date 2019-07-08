@@ -103,6 +103,27 @@ fn test_vector_dot_product() {
 }
 
 #[test]
+fn test_vector_cross_product() {
+    let va = Vector {
+        x: 1.0,
+        y: 0.0,
+        z: 0.0,
+    };
+    let vb = Vector {
+        x: 0.0,
+        y: 1.0,
+        z: 0.0,
+    };
+    let expected = Vector {
+        x: 0.0,
+        y: 0.0,
+        z: 1.0,
+    };
+    let got = va.cross(&vb);
+    assert!(got.almost_equal(&expected), "Got: {:?}", got);
+}
+
+#[test]
 fn test_sphere_ray_intersection() {
     let sphere = Sphere {
         center: Vector::zero(),
