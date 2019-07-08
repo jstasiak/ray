@@ -326,8 +326,8 @@ pub fn closest_intersection(spheres: &[Sphere], ray: &Ray) -> Intersection {
 pub fn image_to_file(image: &Image, w: &mut Write) {
     write!(w, "P3\n{} {}\n255\n", image.width(), image.height()).expect("Cannot write");
 
-    for x in 0..image.width() {
-        for y in 0..image.height() {
+    for y in 0..image.height() {
+        for x in 0..image.width() {
             let color = image.get_color(x, y);
             write!(
                 w,
