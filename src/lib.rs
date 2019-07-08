@@ -215,14 +215,17 @@ impl Sphere {
         // We can now calculate two points at which we cross the sphere, but we only need the
         // closer one so let's do just that.
         let intersection_point = ray.forwarded(tcenter - tdelta).pos;
-        Intersection::Hit(intersection_point)
+        Intersection::Hit(IntersectionData {
+            position: intersection_point,
+            normal: (intersection_point - self.center).normalized(),
+        })
     }
 }
 
 #[derive(Debug)]
 pub enum Intersection {
     None,
-    Hit(Vector),
+    Hit(IntersectionData),
 }
 
 impl Intersection {
@@ -232,11 +235,23 @@ impl Intersection {
                 Intersection::None => true,
                 _ => false,
             },
-            Intersection::Hit(v1) => match other {
-                Intersection::Hit(v2) => v1.almost_equal(&v2),
+            Intersection::Hit(d1) => match other {
+                Intersection::Hit(d2) => d1.almost_equal(&d2),
                 _ => false,
             },
         }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct IntersectionData {
+    pub position: Vector,
+    pub normal: UnitVector,
+}
+
+impl IntersectionData {
+    pub fn almost_equal(&self, other: &IntersectionData) -> bool {
+        self.position.almost_equal(&other.position) && self.normal.0.almost_equal(&other.normal.0)
     }
 }
 
@@ -307,7 +322,14 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
             let intersection = closest_intersection(&spheres, &ray);
             let color = match intersection {
                 Intersection::None => Color::new_black(),
-                Intersection::Hit(_) => Color::new_red(),
+                Intersection::Hit(IntersectionData { normal, .. }) => {
+                    let brightness = 1.0 - normal.0.dot(&ray.dir.0);
+                    Color {
+                        r: brightness,
+                        g: brightness,
+                        b: brightness,
+                    }
+                }
             };
             image.set_color(i, j, color);
         }
@@ -327,9 +349,9 @@ pub fn closest_intersection(spheres: &[Sphere], ray: &Ray) -> Intersection {
         return Intersection::None;
     }
     let mut closest = hits[0];
-    let mut closest_distance = (closest - ray.pos).len();
+    let mut closest_distance = (closest.position - ray.pos).len();
     for hit in hits {
-        let distance = (hit - ray.pos).len();
+        let distance = (hit.position - ray.pos).len();
         if distance < closest_distance {
             closest_distance = distance;
             closest = hit;
