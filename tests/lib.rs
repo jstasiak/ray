@@ -1,7 +1,9 @@
 use raytracer::{
-    almost_equal, closest_intersection, Camera, Intersection, Radians, Ray, Sphere, UnitVector,
-    Vector,
+    almost_equal, closest_intersection, image_to_file, Camera, Color, Image, Intersection, Radians,
+    Ray, Sphere, UnitVector, Vector,
 };
+
+use std::str;
 
 #[test]
 fn test_add() {
@@ -341,4 +343,21 @@ fn test_closest_intersection() {
         }
     )
     .almost_equal(&Intersection::None));
+}
+
+#[test]
+fn test_image_to_file() {
+    let mut image = Image::new(3, 2);
+    image.set_color(0, 0, Color::new_red());
+    image.set_color(2, 1, Color::new_white());
+    let mut buffer = Vec::new();
+    image_to_file(&image, &mut buffer);
+    let got = str::from_utf8(&buffer).unwrap();
+    let expected = "P3
+3 2
+255
+255 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 255 255 255 
+";
+    assert_eq!(got, expected);
 }

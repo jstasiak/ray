@@ -424,4 +424,11 @@ impl Color {
     pub fn new_red() -> Color {
         Self::new(1.0, 0.0, 0.0)
     }
+    pub fn new_white() -> Color {
+        Color {
+            r: 1.0,
+            g: 1.0,
+            b: 1.0,
+        }
+    }
 }
