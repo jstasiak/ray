@@ -10,10 +10,6 @@ pub struct Vector {
 }
 
 impl Vector {
-    pub fn almost_equal(&self, other: &Vector) -> bool {
-        self.almost_equal_with_epsilon(other, 0.0000001)
-    }
-
     pub fn almost_equal_with_epsilon(&self, other: &Vector, epsilon: f32) -> bool {
         (self.x - other.x).abs() < epsilon
             && (self.y - other.y).abs() < epsilon
@@ -77,7 +73,17 @@ impl Vector {
         })
     }
     pub fn is_normalized(&self) -> bool {
-        almost_equal(self.len(), 1.0)
+        self.len().almost_equal(&1.0)
+    }
+}
+
+pub trait AlmostEqual {
+    fn almost_equal(&self, other: &Self) -> bool;
+}
+
+impl AlmostEqual for Vector {
+    fn almost_equal(&self, other: &Vector) -> bool {
+        self.almost_equal_with_epsilon(other, 0.0000001)
     }
 }
 
@@ -169,8 +175,10 @@ impl Ray {
             dir: self.dir,
         }
     }
+}
 
-    pub fn almost_equal(&self, other: &Ray) -> bool {
+impl AlmostEqual for Ray {
+    fn almost_equal(&self, other: &Ray) -> bool {
         self.pos.almost_equal(&other.pos) && self.dir.0.almost_equal(&other.dir.0)
     }
 }
@@ -232,8 +240,8 @@ pub enum Intersection {
     },
 }
 
-impl Intersection {
-    pub fn almost_equal(&self, other: &Intersection) -> bool {
+impl AlmostEqual for Intersection {
+    fn almost_equal(&self, other: &Intersection) -> bool {
         match self {
             Intersection::None => match other {
                 Intersection::None => true,
@@ -253,8 +261,10 @@ impl Intersection {
     }
 }
 
-pub fn almost_equal(a: f32, b: f32) -> bool {
-    almost_equal_with_epsilon(a, b, 0.0000001)
+impl AlmostEqual for f32 {
+    fn almost_equal(&self, other: &f32) -> bool {
+        almost_equal_with_epsilon(*self, *other, 0.0000001)
+    }
 }
 
 pub fn almost_equal_with_epsilon(a: f32, b: f32, epsilon: f32) -> bool {

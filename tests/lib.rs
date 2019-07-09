@@ -1,9 +1,45 @@
 use raytracer::{
-    almost_equal, closest_intersection, image_to_file, Camera, Color, Image, Intersection, Radians,
+    closest_intersection, image_to_file, AlmostEqual, Camera, Color, Image, Intersection, Radians,
     Ray, Sphere, UnitVector, Vector,
 };
-
 use std::str;
+
+// Modified version of the original assert_eq implementation from
+// https://github.com/rust-lang/rust/blob/909f5a049415a815b23502a5498de9a99bbf276b/src/libcore/macros.rs
+macro_rules! assert_almost_eq {
+    ($left:expr, $right:expr) => ({
+        match (&$left, &$right) {
+            (left_val, right_val) => {
+                if !((*left_val).almost_equal(right_val)) {
+                    // The reborrows below are intentional. Without them, the stack slot for the
+                    // borrow is initialized even before the values are compared, leading to a
+                    // noticeable slow down.
+                    panic!(r#"assertion failed: `(left.almost_equal(right))`
+  left: `{:?}`,
+ right: `{:?}`"#, &*left_val, &*right_val)
+                }
+            }
+        }
+    });
+    ($left:expr, $right:expr,) => ({
+        assert_almost_eq!($left, $right)
+    });
+    ($left:expr, $right:expr, $($arg:tt)+) => ({
+        match (&($left), &($right)) {
+            (left_val, right_val) => {
+                if !((*left_val).almost_equal(right_val)) {
+                    // The reborrows below are intentional. Without them, the stack slot for the
+                    // borrow is initialized even before the values are compared, leading to a
+                    // noticeable slow down.
+                    panic!(r#"assertion failed: `(left.almost_equal(right))`
+  left: `{:?}`,
+ right: `{:?}`: {}"#, &*left_val, &*right_val,
+                           format_args!($($arg)+))
+                }
+            }
+        }
+    });
+}
 
 #[test]
 fn test_add() {
@@ -12,38 +48,42 @@ fn test_add() {
 
 #[test]
 fn test_vector_addition() {
-    assert!((Vector {
-        x: 1.0,
-        y: 1.0,
-        z: 1.0
-    } + Vector {
-        x: 1.0,
-        y: 2.0,
-        z: 3.0
-    })
-    .almost_equal(&Vector {
-        x: 2.0,
-        y: 3.0,
-        z: 4.0
-    }));
+    assert_almost_eq!(
+        Vector {
+            x: 1.0,
+            y: 1.0,
+            z: 1.0
+        } + Vector {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0
+        },
+        Vector {
+            x: 2.0,
+            y: 3.0,
+            z: 4.0
+        }
+    );
 }
 
 #[test]
 fn test_vector_subtraction() {
-    assert!((Vector {
-        x: 5.0,
-        y: 5.0,
-        z: 5.0
-    } - Vector {
-        x: 1.0,
-        y: 2.0,
-        z: 3.0
-    })
-    .almost_equal(&Vector {
-        x: 4.0,
-        y: 3.0,
-        z: 2.0
-    }));
+    assert_almost_eq!(
+        Vector {
+            x: 5.0,
+            y: 5.0,
+            z: 5.0
+        } - Vector {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0
+        },
+        Vector {
+            x: 4.0,
+            y: 3.0,
+            z: 2.0
+        }
+    );
 }
 
 #[test]
@@ -58,27 +98,29 @@ fn test_vector_scalar_multiplication() {
         y: 4.0,
         z: 6.0,
     };
-    assert!((initial_vector * 2.0).almost_equal(&expected_vector));
-    assert!((2.0 * initial_vector).almost_equal(&expected_vector));
+    assert_almost_eq!(initial_vector * 2.0, expected_vector);
+    assert_almost_eq!(2.0 * initial_vector, expected_vector);
 }
 
 #[test]
 fn test_vector_scalar_division() {
-    assert!((Vector {
-        x: 1.0,
-        y: 2.0,
-        z: 3.0
-    } / 2.0)
-        .almost_equal(&Vector {
+    assert_almost_eq!(
+        Vector {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0
+        } / 2.0,
+        Vector {
             x: 0.5,
             y: 1.0,
             z: 1.5
-        }));
+        }
+    );
 }
 
 #[test]
 fn test_vector_dot_product() {
-    assert!(almost_equal(
+    assert_almost_eq!(
         Vector {
             x: 1.0,
             y: 0.0,
@@ -90,9 +132,9 @@ fn test_vector_dot_product() {
             z: 1.0
         }),
         0.0
-    ));
+    );
 
-    assert!(almost_equal(
+    assert_almost_eq!(
         Vector {
             x: 1.0,
             y: 0.0,
@@ -104,7 +146,7 @@ fn test_vector_dot_product() {
             z: 0.0
         }),
         1.0
-    ));
+    );
 }
 
 #[test]
@@ -119,13 +161,14 @@ fn test_vector_cross_product() {
         y: 1.0,
         z: 0.0,
     };
-    let expected = Vector {
-        x: 0.0,
-        y: 0.0,
-        z: 1.0,
-    };
-    let got = va.cross(&vb);
-    assert!(got.almost_equal(&expected), "Got: {:?}", got);
+    assert_almost_eq!(
+        va.cross(&vb),
+        Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+        }
+    );
 }
 
 #[test]
@@ -135,13 +178,14 @@ fn test_vector_normalization() {
         y: 2.0,
         z: 3.0,
     };
-    let expected = Vector {
-        x: 0.2672612419124244,
-        y: 0.5345224838248488,
-        z: 0.8017837257372732,
-    };
-    let got = original.normalized();
-    assert!(got.0.almost_equal(&expected), "Got: {:?}", got);
+    assert_almost_eq!(
+        original.normalized().0,
+        Vector {
+            x: 0.2672612419124244,
+            y: 0.5345224838248488,
+            z: 0.8017837257372732,
+        }
+    );
 }
 
 #[test]
@@ -163,11 +207,9 @@ fn test_sphere_ray_intersection() {
             z: 1.0,
         }),
     };
-    let intersection1 = sphere.intersect_ray(&outside_pointing_away);
-    assert!(
-        intersection1.almost_equal(&Intersection::None),
-        "Got: {:?}",
-        intersection1
+    assert_almost_eq!(
+        sphere.intersect_ray(&outside_pointing_away),
+        Intersection::None,
     );
 
     let outside_pointing_towards = Ray {
@@ -182,18 +224,16 @@ fn test_sphere_ray_intersection() {
             z: -1.0,
         }),
     };
-    let intersection2 = sphere.intersect_ray(&outside_pointing_towards);
-    assert!(
-        intersection2.almost_equal(&Intersection::Hit {
+    assert_almost_eq!(
+        sphere.intersect_ray(&outside_pointing_towards),
+        Intersection::Hit {
             position: Vector {
                 x: 0.0,
                 y: 0.0,
                 z: 1.0
             },
             normal: Vector::unitz()
-        }),
-        "Got: {:?}",
-        intersection2
+        }
     );
 
     let inside = Ray {
@@ -204,12 +244,7 @@ fn test_sphere_ray_intersection() {
             z: 0.0,
         }),
     };
-    let intersection3 = sphere.intersect_ray(&inside);
-    assert!(
-        intersection3.almost_equal(&Intersection::None),
-        "Got: {:?}",
-        intersection3
-    );
+    assert_almost_eq!(sphere.intersect_ray(&inside), Intersection::None);
 }
 
 #[test]
@@ -222,47 +257,38 @@ fn test_camera_screen_ray() {
         fovx: Radians(90.0f32.to_radians()),
     };
 
-    let expected_top_left_corner_ray = Ray {
-        pos: Vector::zero(),
-        dir: Vector {
-            x: -1.0,
-            y: 0.5,
-            z: -1.0,
+    assert_almost_eq!(
+        camera.screen_ray(0.0, 0.0),
+        Ray {
+            pos: Vector::zero(),
+            dir: Vector {
+                x: -1.0,
+                y: 0.5,
+                z: -1.0,
+            }
+            .normalized(),
         }
-        .normalized(),
-    };
-    let got_top_left_corner_ray = camera.screen_ray(0.0, 0.0);
-    assert!(
-        got_top_left_corner_ray.almost_equal(&expected_top_left_corner_ray),
-        "Got: {:?}",
-        got_top_left_corner_ray
     );
 
-    let expected_center_screen_ray = Ray {
-        pos: Vector::zero(),
-        dir: -Vector::unitz(),
-    };
-    let got_center_screen_ray = camera.screen_ray(0.5, 0.5);
-    assert!(
-        got_center_screen_ray.almost_equal(&expected_center_screen_ray),
-        "Got: {:?}",
-        got_center_screen_ray
+    assert_almost_eq!(
+        camera.screen_ray(0.5, 0.5),
+        Ray {
+            pos: Vector::zero(),
+            dir: -Vector::unitz(),
+        },
     );
 
-    let expected_quarter_screen_ray = Ray {
-        pos: Vector::zero(),
-        dir: Vector {
-            x: -0.5,
-            y: 0.25,
-            z: -1.0,
+    assert_almost_eq!(
+        camera.screen_ray(0.25, 0.25),
+        Ray {
+            pos: Vector::zero(),
+            dir: Vector {
+                x: -0.5,
+                y: 0.25,
+                z: -1.0,
+            }
+            .normalized(),
         }
-        .normalized(),
-    };
-    let got_quarter_screen_ray = camera.screen_ray(0.25, 0.25);
-    assert!(
-        got_quarter_screen_ray.almost_equal(&expected_quarter_screen_ray),
-        "Got: {:?}",
-        got_quarter_screen_ray
     );
 }
 
@@ -282,67 +308,64 @@ fn test_closest_intersection() {
             radius: 1.0,
         },
     ];
-    let expected_hit_from_negative_x = Intersection::Hit {
-        position: Vector {
-            x: -1.0,
-            y: 0.0,
-            z: 0.0,
-        },
-        normal: -Vector::unitx(),
-    };
-    let got_hit_from_negative_x = closest_intersection(
-        &spheres,
-        &Ray {
-            pos: Vector {
-                x: -100.0,
+    assert_almost_eq!(
+        closest_intersection(
+            &spheres,
+            &Ray {
+                pos: Vector {
+                    x: -100.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                dir: Vector::unitx(),
+            }
+        ),
+        Intersection::Hit {
+            position: Vector {
+                x: -1.0,
                 y: 0.0,
                 z: 0.0,
             },
-            dir: Vector::unitx(),
+            normal: -Vector::unitx(),
         },
-    );
-    assert!(
-        got_hit_from_negative_x.almost_equal(&expected_hit_from_negative_x),
-        "Got: {:?}",
-        got_hit_from_negative_x
-    );
-    let expected_hit_from_positive_x = Intersection::Hit {
-        position: Vector {
-            x: 11.0,
-            y: 0.0,
-            z: 0.0,
-        },
-        normal: Vector::unitx(),
-    };
-    let got_hit_from_positive_x = closest_intersection(
-        &spheres,
-        &Ray {
-            pos: Vector {
-                x: 100.0,
-                y: 0.0,
-                z: 0.0,
-            },
-            dir: -Vector::unitx(),
-        },
-    );
-    assert!(
-        got_hit_from_positive_x.almost_equal(&expected_hit_from_positive_x),
-        "Got: {:?}",
-        got_hit_from_positive_x
     );
 
-    assert!(closest_intersection(
-        &spheres,
-        &Ray {
-            pos: Vector {
-                x: 100.0,
-                y: 0.0,
-                z: 0.0
+    assert_almost_eq!(
+        closest_intersection(
+            &spheres,
+            &Ray {
+                pos: Vector {
+                    x: 100.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                dir: -Vector::unitx(),
             },
-            dir: Vector::unitx()
+        ),
+        Intersection::Hit {
+            position: Vector {
+                x: 11.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            normal: Vector::unitx(),
         }
-    )
-    .almost_equal(&Intersection::None));
+    );
+
+    assert_almost_eq!(
+        closest_intersection(
+            &spheres,
+            &Ray {
+                pos: Vector {
+                    x: 100.0,
+                    y: 0.0,
+                    z: 0.0
+                },
+                dir: Vector::unitx()
+            },
+        ),
+        Intersection::None,
+    );
 }
 
 #[test]
