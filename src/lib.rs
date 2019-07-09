@@ -1,3 +1,4 @@
+use std::f32;
 use std::io::Write;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
@@ -215,17 +216,20 @@ impl Sphere {
         // We can now calculate two points at which we cross the sphere, but we only need the
         // closer one so let's do just that.
         let intersection_point = ray.forwarded(tcenter - tdelta).pos;
-        Intersection::Hit(IntersectionData {
+        Intersection::Hit {
             position: intersection_point,
             normal: (intersection_point - self.center).normalized(),
-        })
+        }
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum Intersection {
     None,
-    Hit(IntersectionData),
+    Hit {
+        position: Vector,
+        normal: UnitVector,
+    },
 }
 
 impl Intersection {
@@ -235,23 +239,17 @@ impl Intersection {
                 Intersection::None => true,
                 _ => false,
             },
-            Intersection::Hit(d1) => match other {
-                Intersection::Hit(d2) => d1.almost_equal(&d2),
+            Intersection::Hit {
+                position: p1,
+                normal: n1,
+            } => match other {
+                Intersection::Hit {
+                    position: p2,
+                    normal: n2,
+                } => p1.almost_equal(&p2) && n1.0.almost_equal(&n2.0),
                 _ => false,
             },
         }
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct IntersectionData {
-    pub position: Vector,
-    pub normal: UnitVector,
-}
-
-impl IntersectionData {
-    pub fn almost_equal(&self, other: &IntersectionData) -> bool {
-        self.position.almost_equal(&other.position) && self.normal.0.almost_equal(&other.normal.0)
     }
 }
 
@@ -322,7 +320,7 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
             let intersection = closest_intersection(&spheres, &ray);
             let color = match intersection {
                 Intersection::None => Color::new_black(),
-                Intersection::Hit(IntersectionData { normal, .. }) => {
+                Intersection::Hit { normal, .. } => {
                     let brightness = 1.0 - normal.0.dot(&ray.dir.0);
                     Color {
                         r: brightness,
@@ -338,26 +336,21 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
 }
 
 pub fn closest_intersection(spheres: &[Sphere], ray: &Ray) -> Intersection {
-    let mut hits = Vec::new();
+    let mut closest_hit = Intersection::None;
+    let mut closest_hit_distance = f32::MAX;
     for sphere in spheres {
         match sphere.intersect_ray(&ray) {
-            Intersection::Hit(point) => hits.push(point),
+            Intersection::Hit { position, normal } => {
+                let distance = (position - ray.pos).len();
+                if distance < closest_hit_distance {
+                    closest_hit_distance = distance;
+                    closest_hit = Intersection::Hit { position, normal };
+                }
+            }
             Intersection::None => (),
         }
     }
-    if hits.len() == 0 {
-        return Intersection::None;
-    }
-    let mut closest = hits[0];
-    let mut closest_distance = (closest.position - ray.pos).len();
-    for hit in hits {
-        let distance = (hit.position - ray.pos).len();
-        if distance < closest_distance {
-            closest_distance = distance;
-            closest = hit;
-        }
-    }
-    Intersection::Hit(closest)
+    closest_hit
 }
 
 pub fn image_to_file(image: &Image, w: &mut Write) {

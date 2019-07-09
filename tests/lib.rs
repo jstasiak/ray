@@ -1,6 +1,6 @@
 use raytracer::{
-    almost_equal, closest_intersection, Camera, Intersection, IntersectionData, Radians, Ray,
-    Sphere, UnitVector, Vector,
+    almost_equal, closest_intersection, Camera, Intersection, Radians, Ray, Sphere, UnitVector,
+    Vector,
 };
 
 #[test]
@@ -182,14 +182,14 @@ fn test_sphere_ray_intersection() {
     };
     let intersection2 = sphere.intersect_ray(&outside_pointing_towards);
     assert!(
-        intersection2.almost_equal(&Intersection::Hit(IntersectionData {
+        intersection2.almost_equal(&Intersection::Hit {
             position: Vector {
                 x: 0.0,
                 y: 0.0,
                 z: 1.0
             },
             normal: Vector::unitz()
-        })),
+        }),
         "Got: {:?}",
         intersection2
     );
@@ -280,14 +280,14 @@ fn test_closest_intersection() {
             radius: 1.0,
         },
     ];
-    let expected_hit_from_negative_x = Intersection::Hit(IntersectionData {
+    let expected_hit_from_negative_x = Intersection::Hit {
         position: Vector {
             x: -1.0,
             y: 0.0,
             z: 0.0,
         },
         normal: -Vector::unitx(),
-    });
+    };
     let got_hit_from_negative_x = closest_intersection(
         &spheres,
         &Ray {
@@ -304,14 +304,14 @@ fn test_closest_intersection() {
         "Got: {:?}",
         got_hit_from_negative_x
     );
-    let expected_hit_from_positive_x = Intersection::Hit(IntersectionData {
+    let expected_hit_from_positive_x = Intersection::Hit {
         position: Vector {
             x: 11.0,
             y: 0.0,
             z: 0.0,
         },
         normal: Vector::unitx(),
-    });
+    };
     let got_hit_from_positive_x = closest_intersection(
         &spheres,
         &Ray {
