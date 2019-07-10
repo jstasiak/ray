@@ -65,12 +65,7 @@ impl Vector {
     }
 
     pub fn normalized(&self) -> UnitVector {
-        let len = self.len();
-        UnitVector(Vector {
-            x: self.x / len,
-            y: self.y / len,
-            z: self.z / len,
-        })
+        UnitVector(*self / self.len())
     }
     pub fn is_normalized(&self) -> bool {
         self.len().almost_equal(&1.0)
