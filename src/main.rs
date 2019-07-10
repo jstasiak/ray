@@ -48,6 +48,61 @@ fn main() {
             radius: 1.0,
             color: Color::new_blue(),
         },
+        // Let's simulate walls, floor and ceiling with spheres
+        Sphere {
+            center: Vector {
+                x: 0.0,
+                y: -10005.0,
+                z: 0.0,
+            },
+            radius: 10000.0,
+            color: Color::new_white(),
+        },
+        Sphere {
+            center: Vector {
+                x: 0.0,
+                y: 10005.0,
+                z: 0.0,
+            },
+            radius: 10000.0,
+            color: Color::new_white(),
+        },
+        Sphere {
+            center: Vector {
+                x: -10010.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            radius: 10000.0,
+            color: Color::new_white(),
+        },
+        Sphere {
+            center: Vector {
+                x: 10010.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            radius: 10000.0,
+            color: Color::new_white(),
+        },
+        Sphere {
+            center: Vector {
+                x: 0.0,
+                y: 0.0,
+                z: -10015.0,
+            },
+            radius: 10000.0,
+            color: Color::new_white(),
+        },
+        Sphere {
+            center: Vector {
+                x: 0.0,
+                y: 0.0,
+                z: 10005.0,
+            },
+            radius: 10000.0,
+            color: Color::new_white(),
+        },
     ];
     let camera = Camera {
         position: Vector::zero(),
