@@ -208,10 +208,7 @@ fn test_sphere_ray_intersection() {
             z: 1.0,
         }),
     };
-    assert_almost_eq!(
-        sphere.intersect_ray(&outside_pointing_away),
-        Intersection::None,
-    );
+    assert_almost_eq!(sphere.intersect_ray(&outside_pointing_away), None);
 
     let outside_pointing_towards = Ray {
         pos: Vector {
@@ -227,7 +224,7 @@ fn test_sphere_ray_intersection() {
     };
     assert_almost_eq!(
         sphere.intersect_ray(&outside_pointing_towards),
-        Intersection::Hit {
+        Some(Intersection {
             position: Vector {
                 x: 0.0,
                 y: 0.0,
@@ -235,7 +232,7 @@ fn test_sphere_ray_intersection() {
             },
             normal: Vector::unitz(),
             sphere: &sphere,
-        }
+        })
     );
 
     let inside = Ray {
@@ -246,7 +243,7 @@ fn test_sphere_ray_intersection() {
             z: 0.0,
         }),
     };
-    assert_almost_eq!(sphere.intersect_ray(&inside), Intersection::None);
+    assert_almost_eq!(sphere.intersect_ray(&inside), None);
 }
 
 #[test]
@@ -350,7 +347,7 @@ fn test_closest_intersection() {
                 dir: Vector::unitx(),
             }
         ),
-        Intersection::Hit {
+        Some(Intersection {
             position: Vector {
                 x: -1.0,
                 y: 0.0,
@@ -358,7 +355,7 @@ fn test_closest_intersection() {
             },
             normal: -Vector::unitx(),
             sphere: &spheres[0],
-        },
+        }),
     );
 
     assert_almost_eq!(
@@ -373,7 +370,7 @@ fn test_closest_intersection() {
                 dir: -Vector::unitx(),
             },
         ),
-        Intersection::Hit {
+        Some(Intersection {
             position: Vector {
                 x: 11.0,
                 y: 0.0,
@@ -381,7 +378,7 @@ fn test_closest_intersection() {
             },
             normal: Vector::unitx(),
             sphere: &spheres[1],
-        }
+        }),
     );
 
     assert_almost_eq!(
@@ -396,7 +393,7 @@ fn test_closest_intersection() {
                 dir: Vector::unitx()
             },
         ),
-        Intersection::None,
+        None,
     );
 }
 

@@ -201,21 +201,21 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn intersect_ray<'a>(&'a self, ray: &Ray) -> Intersection<'a> {
+    pub fn intersect_ray<'a>(&'a self, ray: &Ray) -> Option<Intersection<'a>> {
         // Math based on information found on
         // http://kylehalladay.com/blog/tutorial/math/2013/12/24/Ray-Sphere-Intersection.html
         //
         let pos_to_center = self.center - ray.pos;
         // No support for intersections with rays coming from inside the sphere at the moment.
         if pos_to_center.len() <= self.radius {
-            return Intersection::None;
+            return None;
         }
         // tcenter is how far along the ray dir we need to go in order for the line orthogonal to
         // the ray to cross the sphere's center. Let's call that point on the ray C.
         let tcenter = pos_to_center.dot(&ray.dir.0);
         // The sphere is in the opposite direction.
         if tcenter < 0.0 {
-            return Intersection::None;
+            return None;
         }
         // We now have a right triangle with [ray.pos C] being one of its leg and [ray.pos
         // sphere.center] being its hypotenuse. The distance between C and self.center is what we
@@ -225,7 +225,7 @@ impl Sphere {
         // If we miss the sphere totally the distance d will be greater than the radius, let's bail
         // in that case.
         if d > self.radius {
-            return Intersection::None;
+            return None;
         }
         // Now we have two right triangles with self.radius being its hypotenuse and d forming one
         // of its legs. The remaining leg is a distance tdelta that we'll use to move forward and
@@ -235,11 +235,11 @@ impl Sphere {
         // We can now calculate two points at which we cross the sphere, but we only need the
         // closer one so let's do just that.
         let intersection_point = ray.forwarded(tcenter - tdelta).pos;
-        Intersection::Hit {
+        Some(Intersection {
             position: intersection_point,
             normal: (intersection_point - self.center).normalized(),
             sphere: &self,
-        }
+        })
     }
 }
 
@@ -250,41 +250,38 @@ impl AlmostEqual for Sphere {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum Intersection<'a> {
-    None,
-    Hit {
-        position: Vector,
-        normal: UnitVector,
-        sphere: &'a Sphere,
-    },
+pub struct Intersection<'a> {
+    pub position: Vector,
+    pub normal: UnitVector,
+    pub sphere: &'a Sphere,
 }
 
 impl<'a> AlmostEqual for Intersection<'a> {
     fn almost_equal(&self, other: &Intersection) -> bool {
-        match self {
-            Intersection::None => match other {
-                Intersection::None => true,
-                _ => false,
-            },
-            Intersection::Hit {
-                position: p1,
-                normal: n1,
-                sphere: &s1,
-            } => match other {
-                Intersection::Hit {
-                    position: p2,
-                    normal: n2,
-                    sphere: &s2,
-                } => p1.almost_equal(&p2) && n1.0.almost_equal(&n2.0) && s1.almost_equal(&s2),
-                _ => false,
-            },
-        }
+        self.position.almost_equal(&other.position)
+            && self.normal.almost_equal(&other.normal)
+            && self.sphere.almost_equal(other.sphere)
     }
 }
 
 impl AlmostEqual for f32 {
     fn almost_equal(&self, other: &f32) -> bool {
         almost_equal_with_epsilon(*self, *other, 0.0000001)
+    }
+}
+
+impl<T: AlmostEqual> AlmostEqual for Option<T> {
+    fn almost_equal(&self, other: &Option<T>) -> bool {
+        match self {
+            None => match other {
+                None => true,
+                Some(_) => false,
+            },
+            Some(v1) => match other {
+                None => false,
+                Some(v2) => v1.almost_equal(&v2),
+            },
+        }
     }
 }
 
@@ -348,12 +345,11 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
                 i as f32 / (width - 1) as f32,
                 j as f32 / (height - 1) as f32,
             );
-            let intersection = closest_intersection(&spheres, &ray);
-            let color = match intersection {
-                Intersection::None => Color::new_black(),
-                Intersection::Hit { normal, sphere, .. } => {
-                    let brightness = normal.0.dot(&-ray.dir.0);
-                    sphere.color * brightness
+            let color = match closest_intersection(&spheres, &ray) {
+                None => Color::new_black(),
+                Some(intersection) => {
+                    let brightness = intersection.normal.0.dot(&-ray.dir.0);
+                    intersection.sphere.color * brightness
                 }
             };
             image.set_color(i, j, color);
@@ -362,27 +358,16 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
     image
 }
 
-pub fn closest_intersection<'a>(spheres: &'a [Sphere], ray: &Ray) -> Intersection<'a> {
-    let mut closest_hit = Intersection::None;
+pub fn closest_intersection<'a>(spheres: &'a [Sphere], ray: &Ray) -> Option<Intersection<'a>> {
+    let mut closest_hit = None;
     let mut closest_hit_distance = f32::MAX;
     for sphere in spheres {
-        match sphere.intersect_ray(&ray) {
-            Intersection::Hit {
-                position,
-                normal,
-                sphere,
-            } => {
-                let distance = (position - ray.pos).len();
-                if distance < closest_hit_distance {
-                    closest_hit_distance = distance;
-                    closest_hit = Intersection::Hit {
-                        position,
-                        normal,
-                        sphere,
-                    };
-                }
+        if let Some(intersection) = sphere.intersect_ray(&ray) {
+            let distance = (intersection.position - ray.pos).len();
+            if distance < closest_hit_distance {
+                closest_hit_distance = distance;
+                closest_hit = Some(intersection);
             }
-            Intersection::None => (),
         }
     }
     closest_hit
