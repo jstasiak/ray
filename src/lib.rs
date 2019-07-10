@@ -470,6 +470,29 @@ impl AlmostEqual for Color {
     }
 }
 
+impl Add for Color {
+    type Output = Color;
+
+    fn add(self, other: Color) -> Color {
+        // Adding two Colors together clamps the r, g and b values to [0.0, 1.0] range
+        Color {
+            r: clamp(0.0, 1.0, self.r + other.r),
+            g: clamp(0.0, 1.0, self.g + other.g),
+            b: clamp(0.0, 1.0, self.b + other.b),
+        }
+    }
+}
+
+fn clamp(min: f32, max: f32, value: f32) -> f32 {
+    if value < min {
+        min
+    } else if value > max {
+        max
+    } else {
+        value
+    }
+}
+
 impl Mul<f32> for Color {
     type Output = Color;
 

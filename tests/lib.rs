@@ -441,3 +441,12 @@ fn test_color_scalar_multiplication() {
         }
     );
 }
+
+#[test]
+fn test_color_addition() {
+    assert_almost_eq!(
+        Color::new_red() + Color::new_green() + Color::new_blue(),
+        Color::new_white()
+    );
+    assert_almost_eq!(Color::new_red() + Color::new_red(), Color::new_red());
+}
