@@ -351,6 +351,9 @@ pub fn render(
     bounces: usize,
 ) -> Image {
     let mut image = Image::new(width, height);
+    let pixels_total = width * height;
+    let mut pixels_done = 0;
+    let mut percent = 0;
     for i in 0..width {
         for j in 0..height {
             // -1s here because we want to provide x and y coordinates between 0 and 1 inclusive
@@ -360,6 +363,12 @@ pub fn render(
             );
             let color = trace_ray(&spheres, &ray, bounces);
             image.set_color(i, j, color);
+            pixels_done += 1;
+            let new_percent = pixels_done * 100 / pixels_total;
+            if new_percent != percent {
+                eprintln!("{}% done...", new_percent);
+                percent = new_percent;
+            }
         }
     }
     image
