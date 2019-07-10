@@ -295,6 +295,32 @@ fn test_camera_screen_ray() {
 }
 
 #[test]
+fn test_unitvector_reflection() {
+    assert_almost_eq!(
+        Vector {
+            x: -1.0,
+            y: -1.0,
+            z: -1.0,
+        }
+        .normalized()
+        .reflected(
+            &Vector {
+                x: 0.0,
+                y: 1.0,
+                z: 0.0,
+            }
+            .normalized()
+        ),
+        Vector {
+            x: -1.0,
+            y: 1.0,
+            z: -1.0,
+        }
+        .normalized()
+    );
+}
+
+#[test]
 fn test_closest_intersection() {
     let spheres = [
         Sphere {

@@ -90,6 +90,21 @@ impl AlmostEqual for Vector {
 #[derive(Copy, Clone, Debug)]
 pub struct UnitVector(pub Vector);
 
+impl UnitVector {
+    pub fn reflected(&self, normal: &UnitVector) -> UnitVector {
+        // Math following Paul Bourke's explanation from http://paulbourke.net/geometry/reflected/
+        let ri = &self.0;
+        let n = &normal.0;
+        UnitVector(*ri - 2.0 * *n * ri.dot(n))
+    }
+}
+
+impl AlmostEqual for UnitVector {
+    fn almost_equal(&self, other: &UnitVector) -> bool {
+        self.0.almost_equal(&other.0)
+    }
+}
+
 impl Neg for UnitVector {
     type Output = UnitVector;
 
