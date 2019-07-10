@@ -1,6 +1,6 @@
 use raytracer::{
-    closest_intersection, image_to_file, AlmostEqual, Camera, Color, Image, Intersection, Radians,
-    Ray, Sphere, UnitVector, Vector,
+    closest_intersection, image_to_file, trace_ray, AlmostEqual, Camera, Color, Image,
+    Intersection, Radians, Ray, Sphere, UnitVector, Vector,
 };
 use std::str;
 
@@ -449,4 +449,49 @@ fn test_color_addition() {
         Color::new_white()
     );
     assert_almost_eq!(Color::new_red() + Color::new_red(), Color::new_red());
+}
+
+#[test]
+fn test_trace_ray() {
+    let spheres = [
+        Sphere {
+            center: Vector {
+                x: 2.0,
+                y: 1.0,
+                z: 1.0,
+            },
+            radius: 1.0,
+            color: Color::new_red(),
+        },
+        Sphere {
+            center: Vector {
+                x: 4.0,
+                y: 4.0,
+                z: 1.0,
+            },
+            radius: 1.0,
+            color: Color::new_green(),
+        },
+    ];
+    let ray = Ray {
+        pos: Vector {
+            x: 1.0,
+            y: 3.0,
+            z: 1.0,
+        },
+        dir: Vector {
+            x: 1.0,
+            y: -1.0,
+            z: 0.0,
+        }
+        .normalized(),
+    };
+    assert_almost_eq!(
+        trace_ray(&spheres, &ray, 0),
+        45.0f32.to_radians().cos() * Color::new_red(),
+    );
+    assert_almost_eq!(
+        trace_ray(&spheres, &ray, 1),
+        45.0f32.to_radians().cos() * (Color::new_red() + Color::new_green()),
+    );
 }

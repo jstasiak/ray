@@ -56,6 +56,6 @@ fn main() {
         aspect_ratio: 4.0 / 3.0,
         fovx: Radians(90.0f32.to_radians()),
     };
-    let image = render(&spheres, &camera, 800, 600);
+    let image = render(&spheres, &camera, 800, 600, 3);
     image_to_file(&image, &mut file);
 }

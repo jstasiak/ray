@@ -185,6 +185,13 @@ impl Ray {
             dir: self.dir,
         }
     }
+
+    pub fn reflected(&self, position: Vector, normal: &UnitVector) -> Ray {
+        Ray {
+            pos: position,
+            dir: self.dir.reflected(normal),
+        }
+    }
 }
 
 impl AlmostEqual for Ray {
@@ -336,7 +343,13 @@ pub fn posunit_to_unit(value: f32) -> f32 {
 
 pub struct Radians(pub f32);
 
-pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) -> Image {
+pub fn render(
+    spheres: &[Sphere],
+    camera: &Camera,
+    width: usize,
+    height: usize,
+    bounces: usize,
+) -> Image {
     let mut image = Image::new(width, height);
     for i in 0..width {
         for j in 0..height {
@@ -345,17 +358,31 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
                 i as f32 / (width - 1) as f32,
                 j as f32 / (height - 1) as f32,
             );
-            let color = match closest_intersection(&spheres, &ray) {
-                None => Color::new_black(),
-                Some(intersection) => {
-                    let brightness = intersection.normal.0.dot(&-ray.dir.0);
-                    intersection.sphere.color * brightness
-                }
-            };
+            let color = trace_ray(&spheres, &ray, bounces);
             image.set_color(i, j, color);
         }
     }
     image
+}
+
+pub fn trace_ray(spheres: &[Sphere], ray: &Ray, bounces: usize) -> Color {
+    match closest_intersection(&spheres, &ray) {
+        None => Color::new_black(),
+        Some(intersection) => {
+            let brightness = intersection.normal.0.dot(&-ray.dir.0);
+
+            let mut color = intersection.sphere.color;
+            if bounces > 0 {
+                color = color
+                    + trace_ray(
+                        &spheres,
+                        &ray.reflected(intersection.position, &intersection.normal),
+                        bounces - 1,
+                    );
+            }
+            color * brightness
+        }
+    }
 }
 
 pub fn closest_intersection<'a>(spheres: &'a [Sphere], ray: &Ray) -> Option<Intersection<'a>> {
