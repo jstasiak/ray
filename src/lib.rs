@@ -331,7 +331,7 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
             let color = match intersection {
                 Intersection::None => Color::new_black(),
                 Intersection::Hit { normal, .. } => {
-                    let brightness = 1.0 - normal.0.dot(&ray.dir.0);
+                    let brightness = normal.0.dot(&-ray.dir.0);
                     Color {
                         r: brightness,
                         g: brightness,
