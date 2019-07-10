@@ -183,14 +183,15 @@ impl AlmostEqual for Ray {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Sphere {
     pub center: Vector,
     pub radius: f32,
+    pub color: Color,
 }
 
 impl Sphere {
-    pub fn intersect_ray(&self, ray: &Ray) -> Intersection {
+    pub fn intersect_ray<'a>(&'a self, ray: &Ray) -> Intersection<'a> {
         // Math based on information found on
         // http://kylehalladay.com/blog/tutorial/math/2013/12/24/Ray-Sphere-Intersection.html
         //
@@ -227,20 +228,28 @@ impl Sphere {
         Intersection::Hit {
             position: intersection_point,
             normal: (intersection_point - self.center).normalized(),
+            sphere: &self,
         }
     }
 }
 
+impl AlmostEqual for Sphere {
+    fn almost_equal(&self, other: &Sphere) -> bool {
+        self.center.almost_equal(&other.center) && self.radius.almost_equal(&other.radius)
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
-pub enum Intersection {
+pub enum Intersection<'a> {
     None,
     Hit {
         position: Vector,
         normal: UnitVector,
+        sphere: &'a Sphere,
     },
 }
 
-impl AlmostEqual for Intersection {
+impl<'a> AlmostEqual for Intersection<'a> {
     fn almost_equal(&self, other: &Intersection) -> bool {
         match self {
             Intersection::None => match other {
@@ -250,11 +259,13 @@ impl AlmostEqual for Intersection {
             Intersection::Hit {
                 position: p1,
                 normal: n1,
+                sphere: &s1,
             } => match other {
                 Intersection::Hit {
                     position: p2,
                     normal: n2,
-                } => p1.almost_equal(&p2) && n1.0.almost_equal(&n2.0),
+                    sphere: &s2,
+                } => p1.almost_equal(&p2) && n1.0.almost_equal(&n2.0) && s1.almost_equal(&s2),
                 _ => false,
             },
         }
@@ -330,13 +341,9 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
             let intersection = closest_intersection(&spheres, &ray);
             let color = match intersection {
                 Intersection::None => Color::new_black(),
-                Intersection::Hit { normal, .. } => {
+                Intersection::Hit { normal, sphere, .. } => {
                     let brightness = normal.0.dot(&-ray.dir.0);
-                    Color {
-                        r: brightness,
-                        g: brightness,
-                        b: brightness,
-                    }
+                    sphere.color * brightness
                 }
             };
             image.set_color(i, j, color);
@@ -345,16 +352,24 @@ pub fn render(spheres: &[Sphere], camera: &Camera, width: usize, height: usize) 
     image
 }
 
-pub fn closest_intersection(spheres: &[Sphere], ray: &Ray) -> Intersection {
+pub fn closest_intersection<'a>(spheres: &'a [Sphere], ray: &Ray) -> Intersection<'a> {
     let mut closest_hit = Intersection::None;
     let mut closest_hit_distance = f32::MAX;
     for sphere in spheres {
         match sphere.intersect_ray(&ray) {
-            Intersection::Hit { position, normal } => {
+            Intersection::Hit {
+                position,
+                normal,
+                sphere,
+            } => {
                 let distance = (position - ray.pos).len();
                 if distance < closest_hit_distance {
                     closest_hit_distance = distance;
-                    closest_hit = Intersection::Hit { position, normal };
+                    closest_hit = Intersection::Hit {
+                        position,
+                        normal,
+                        sphere,
+                    };
                 }
             }
             Intersection::None => (),
@@ -415,7 +430,7 @@ impl Image {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Color {
     pub r: f32,
     pub g: f32,
@@ -434,11 +449,54 @@ impl Color {
     pub fn new_red() -> Color {
         Self::new(1.0, 0.0, 0.0)
     }
+
+    pub fn new_green() -> Color {
+        Self::new(0.0, 1.0, 0.0)
+    }
+
+    pub fn new_blue() -> Color {
+        Self::new(0.0, 0.0, 1.0)
+    }
+
     pub fn new_white() -> Color {
         Color {
             r: 1.0,
             g: 1.0,
             b: 1.0,
         }
+    }
+}
+
+impl AlmostEqual for Color {
+    fn almost_equal(&self, other: &Color) -> bool {
+        self.r.almost_equal(&other.r)
+            && self.g.almost_equal(&other.g)
+            && self.b.almost_equal(&other.b)
+    }
+}
+
+impl Mul<f32> for Color {
+    type Output = Color;
+
+    fn mul(self, other: f32) -> Color {
+        // The floating point operand needs to be strictly within (0.0, 1.0) range, this is for
+        // simple scaling. May revisit later to do multiplication by values larger than 1.0 and
+        // clamping afterwards.
+        assert!(0.0 <= other && other <= 1.0);
+        Color {
+            r: self.r * other,
+            g: self.g * other,
+            b: self.b * other,
+        }
+    }
+}
+
+impl Mul<Color> for f32 {
+    type Output = Color;
+
+    fn mul(self, other: Color) -> Color {
+        // See impl Mul<f32> for Color comment.
+        assert!(0.0 <= self && self <= 1.0);
+        other * self
     }
 }

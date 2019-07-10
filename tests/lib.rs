@@ -193,6 +193,7 @@ fn test_sphere_ray_intersection() {
     let sphere = Sphere {
         center: Vector::zero(),
         radius: 1.0,
+        color: Color::new_black(),
     };
 
     let outside_pointing_away = Ray {
@@ -232,7 +233,8 @@ fn test_sphere_ray_intersection() {
                 y: 0.0,
                 z: 1.0
             },
-            normal: Vector::unitz()
+            normal: Vector::unitz(),
+            sphere: &sphere,
         }
     );
 
@@ -298,6 +300,7 @@ fn test_closest_intersection() {
         Sphere {
             center: Vector::zero(),
             radius: 1.0,
+            color: Color::new_black(),
         },
         Sphere {
             center: Vector {
@@ -306,6 +309,7 @@ fn test_closest_intersection() {
                 z: 0.0,
             },
             radius: 1.0,
+            color: Color::new_black(),
         },
     ];
     assert_almost_eq!(
@@ -327,6 +331,7 @@ fn test_closest_intersection() {
                 z: 0.0,
             },
             normal: -Vector::unitx(),
+            sphere: &spheres[0],
         },
     );
 
@@ -349,6 +354,7 @@ fn test_closest_intersection() {
                 z: 0.0,
             },
             normal: Vector::unitx(),
+            sphere: &spheres[1],
         }
     );
 
@@ -383,4 +389,32 @@ fn test_image_to_file() {
 0 0 0 0 0 0 255 255 255 
 ";
     assert_eq!(got, expected);
+}
+
+#[test]
+fn test_color_scalar_multiplication() {
+    assert_almost_eq!(
+        Color {
+            r: 1.0,
+            g: 1.0,
+            b: 1.0
+        } * 0.5,
+        Color {
+            r: 0.5,
+            g: 0.5,
+            b: 0.5
+        }
+    );
+    assert_almost_eq!(
+        0.5 * Color {
+            r: 1.0,
+            g: 1.0,
+            b: 1.0
+        },
+        Color {
+            r: 0.5,
+            g: 0.5,
+            b: 0.5
+        }
+    );
 }
