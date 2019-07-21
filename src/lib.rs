@@ -5,7 +5,7 @@ pub mod scene;
 pub mod traits;
 
 pub use crate::image::{image_to_file, Image};
-pub use crate::material::Color;
+pub use crate::material::{Color, Material};
 pub use crate::render::render;
 pub use crate::scene::{Camera, Radians, Ray, Sphere, Vector};
 pub use crate::traits::AlmostEqual;

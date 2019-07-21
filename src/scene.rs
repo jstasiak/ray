@@ -1,4 +1,4 @@
-use crate::material::Color;
+use crate::material::{Color, Material};
 use crate::traits::AlmostEqual;
 use std::f32;
 use std::ops::{Add, Div, Mul, Neg, Sub};
@@ -201,7 +201,7 @@ impl AlmostEqual for Ray {
 pub struct Sphere {
     pub center: Vector,
     pub radius: f32,
-    pub color: Color,
+    pub material: Material,
 }
 
 impl Sphere {
@@ -346,7 +346,7 @@ pub fn trace_ray(spheres: &[Sphere], ray: &Ray, bounces: usize) -> Color {
         Some(intersection) => {
             let brightness = intersection.normal.0.dot(&-ray.dir.0);
 
-            let mut color = intersection.sphere.color;
+            let mut color = intersection.sphere.material.color;
             if bounces > 0 {
                 color = color
                     + trace_ray(
@@ -378,7 +378,7 @@ pub fn closest_intersection<'a>(spheres: &'a [Sphere], ray: &Ray) -> Option<Inte
 #[cfg(test)]
 mod tests {
     use crate::assert_almost_eq;
-    use crate::material::Color;
+    use crate::material::{Color, Material};
     use crate::scene::{
         closest_intersection, trace_ray, Camera, Intersection, Radians, Ray, Sphere, UnitVector,
         Vector,
@@ -532,7 +532,7 @@ mod tests {
         let sphere = Sphere {
             center: Vector::zero(),
             radius: 1.0,
-            color: Color::new_black(),
+            material: Material::dummy(),
         };
 
         let outside_pointing_away = Ray {
@@ -662,7 +662,7 @@ mod tests {
             Sphere {
                 center: Vector::zero(),
                 radius: 1.0,
-                color: Color::new_black(),
+                material: Material::dummy(),
             },
             Sphere {
                 center: Vector {
@@ -671,7 +671,7 @@ mod tests {
                     z: 0.0,
                 },
                 radius: 1.0,
-                color: Color::new_black(),
+                material: Material::dummy(),
             },
         ];
         assert_almost_eq!(
@@ -746,7 +746,9 @@ mod tests {
                     z: 1.0,
                 },
                 radius: 1.0,
-                color: Color::new_red(),
+                material: Material {
+                    color: Color::new_red(),
+                },
             },
             Sphere {
                 center: Vector {
@@ -755,7 +757,9 @@ mod tests {
                     z: 1.0,
                 },
                 radius: 1.0,
-                color: Color::new_green(),
+                material: Material {
+                    color: Color::new_green(),
+                },
             },
         ];
         let ray = Ray {

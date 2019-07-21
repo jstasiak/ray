@@ -1,4 +1,4 @@
-use raytracer::{image_to_file, render, Camera, Color, Radians, Sphere, Vector};
+use raytracer::{image_to_file, render, Camera, Color, Material, Radians, Sphere, Vector};
 use std::env;
 use std::fs::File;
 use std::io::{self, Write};
@@ -28,7 +28,9 @@ fn main() {
                 z: -5.0,
             },
             radius: 1.0,
-            color: Color::new_red(),
+            material: Material {
+                color: Color::new_red(),
+            },
         },
         Sphere {
             center: Vector {
@@ -37,7 +39,9 @@ fn main() {
                 z: -5.0,
             },
             radius: 1.0,
-            color: Color::new_green(),
+            material: Material {
+                color: Color::new_green(),
+            },
         },
         Sphere {
             center: Vector {
@@ -46,7 +50,9 @@ fn main() {
                 z: -10.0,
             },
             radius: 1.0,
-            color: Color::new_blue(),
+            material: Material {
+                color: Color::new_blue(),
+            },
         },
         // Let's simulate walls, floor and ceiling with spheres
         Sphere {
@@ -56,7 +62,9 @@ fn main() {
                 z: 0.0,
             },
             radius: 10000.0,
-            color: Color::new_white(),
+            material: Material {
+                color: Color::new_white(),
+            },
         },
         Sphere {
             center: Vector {
@@ -65,7 +73,9 @@ fn main() {
                 z: 0.0,
             },
             radius: 10000.0,
-            color: Color::new_white(),
+            material: Material {
+                color: Color::new_white(),
+            },
         },
         Sphere {
             center: Vector {
@@ -74,7 +84,9 @@ fn main() {
                 z: 0.0,
             },
             radius: 10000.0,
-            color: Color::new_white(),
+            material: Material {
+                color: Color::new_white(),
+            },
         },
         Sphere {
             center: Vector {
@@ -83,7 +95,9 @@ fn main() {
                 z: 0.0,
             },
             radius: 10000.0,
-            color: Color::new_white(),
+            material: Material {
+                color: Color::new_white(),
+            },
         },
         Sphere {
             center: Vector {
@@ -92,7 +106,9 @@ fn main() {
                 z: -10015.0,
             },
             radius: 10000.0,
-            color: Color::new_white(),
+            material: Material {
+                color: Color::new_white(),
+            },
         },
         Sphere {
             center: Vector {
@@ -101,7 +117,9 @@ fn main() {
                 z: 10005.0,
             },
             radius: 10000.0,
-            color: Color::new_white(),
+            material: Material {
+                color: Color::new_white(),
+            },
         },
     ];
     let camera = Camera {

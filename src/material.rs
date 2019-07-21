@@ -3,6 +3,19 @@ use std::f32;
 use std::ops::{Add, Mul};
 
 #[derive(Copy, Clone, Debug)]
+pub struct Material {
+    pub color: Color,
+}
+
+impl Material {
+    pub fn dummy() -> Material {
+        Material {
+            color: Color::new_black(),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
 pub struct Color {
     pub r: f32,
     pub g: f32,
