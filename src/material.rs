@@ -95,3 +95,47 @@ impl Mul<Color> for f32 {
         other * self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::assert_almost_eq;
+    use crate::material::Color;
+    use crate::traits::AlmostEqual;
+
+    #[test]
+    fn test_color_scalar_multiplication() {
+        assert_almost_eq!(
+            Color {
+                r: 1.0,
+                g: 1.0,
+                b: 1.0
+            } * 0.5,
+            Color {
+                r: 0.5,
+                g: 0.5,
+                b: 0.5
+            }
+        );
+        assert_almost_eq!(
+            0.5 * Color {
+                r: 1.0,
+                g: 1.0,
+                b: 1.0
+            },
+            Color {
+                r: 0.5,
+                g: 0.5,
+                b: 0.5
+            }
+        );
+    }
+
+    #[test]
+    fn test_color_addition() {
+        assert_almost_eq!(
+            Color::new_red() + Color::new_green() + Color::new_blue(),
+            Color::new_white()
+        );
+        assert_almost_eq!(Color::new_red() + Color::new_red(), Color::new_red());
+    }
+}

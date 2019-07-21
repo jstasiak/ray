@@ -374,3 +374,410 @@ pub fn closest_intersection<'a>(spheres: &'a [Sphere], ray: &Ray) -> Option<Inte
     }
     closest_hit
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::assert_almost_eq;
+    use crate::material::Color;
+    use crate::scene::{
+        closest_intersection, trace_ray, Camera, Intersection, Radians, Ray, Sphere, UnitVector,
+        Vector,
+    };
+    use crate::traits::AlmostEqual;
+
+    #[test]
+    fn test_vector_addition() {
+        assert_almost_eq!(
+            Vector {
+                x: 1.0,
+                y: 1.0,
+                z: 1.0
+            } + Vector {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0
+            },
+            Vector {
+                x: 2.0,
+                y: 3.0,
+                z: 4.0
+            }
+        );
+    }
+
+    #[test]
+    fn test_vector_subtraction() {
+        assert_almost_eq!(
+            Vector {
+                x: 5.0,
+                y: 5.0,
+                z: 5.0
+            } - Vector {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0
+            },
+            Vector {
+                x: 4.0,
+                y: 3.0,
+                z: 2.0
+            }
+        );
+    }
+
+    #[test]
+    fn test_vector_scalar_multiplication() {
+        let initial_vector = Vector {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+        };
+        let expected_vector = Vector {
+            x: 2.0,
+            y: 4.0,
+            z: 6.0,
+        };
+        assert_almost_eq!(initial_vector * 2.0, expected_vector);
+        assert_almost_eq!(2.0 * initial_vector, expected_vector);
+    }
+
+    #[test]
+    fn test_vector_scalar_division() {
+        assert_almost_eq!(
+            Vector {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0
+            } / 2.0,
+            Vector {
+                x: 0.5,
+                y: 1.0,
+                z: 1.5
+            }
+        );
+    }
+
+    #[test]
+    fn test_vector_dot_product() {
+        assert_almost_eq!(
+            Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0
+            }
+            .dot(&Vector {
+                x: 0.0,
+                y: 1.0,
+                z: 1.0
+            }),
+            0.0
+        );
+
+        assert_almost_eq!(
+            Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0
+            }
+            .dot(&Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0
+            }),
+            1.0
+        );
+    }
+
+    #[test]
+    fn test_vector_cross_product() {
+        let va = Vector {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+        };
+        let vb = Vector {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        };
+        assert_almost_eq!(
+            va.cross(&vb),
+            Vector {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
+            }
+        );
+    }
+
+    #[test]
+    fn test_vector_normalization() {
+        let original = Vector {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+        };
+        assert_almost_eq!(
+            original.normalized().0,
+            Vector {
+                x: 0.2672612419124244,
+                y: 0.5345224838248488,
+                z: 0.8017837257372732,
+            }
+        );
+    }
+
+    #[test]
+    fn test_sphere_ray_intersection() {
+        let sphere = Sphere {
+            center: Vector::zero(),
+            radius: 1.0,
+            color: Color::new_black(),
+        };
+
+        let outside_pointing_away = Ray {
+            pos: Vector {
+                x: 0.0,
+                y: 0.0,
+                z: 10.0,
+            },
+            dir: UnitVector(Vector {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
+            }),
+        };
+        assert_almost_eq!(sphere.intersect_ray(&outside_pointing_away), None);
+
+        let outside_pointing_towards = Ray {
+            pos: Vector {
+                x: 0.0,
+                y: 0.0,
+                z: 10.0,
+            },
+            dir: UnitVector(Vector {
+                x: 0.0,
+                y: 0.0,
+                z: -1.0,
+            }),
+        };
+        assert_almost_eq!(
+            sphere.intersect_ray(&outside_pointing_towards),
+            Some(Intersection {
+                position: Vector {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 1.0
+                },
+                normal: Vector::unitz(),
+                sphere: &sphere,
+            })
+        );
+
+        let inside = Ray {
+            pos: Vector::zero(),
+            dir: UnitVector(Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            }),
+        };
+        assert_almost_eq!(sphere.intersect_ray(&inside), None);
+    }
+
+    #[test]
+    fn test_camera_screen_ray() {
+        let camera = Camera {
+            position: Vector::zero(),
+            forward: -Vector::unitz(),
+            up: Vector::unity(),
+            aspect_ratio: 2.0 / 1.0,
+            fovx: Radians(90.0f32.to_radians()),
+        };
+
+        assert_almost_eq!(
+            camera.screen_ray(0.0, 0.0),
+            Ray {
+                pos: Vector::zero(),
+                dir: Vector {
+                    x: -1.0,
+                    y: 0.5,
+                    z: -1.0,
+                }
+                .normalized(),
+            }
+        );
+
+        assert_almost_eq!(
+            camera.screen_ray(0.5, 0.5),
+            Ray {
+                pos: Vector::zero(),
+                dir: -Vector::unitz(),
+            },
+        );
+
+        assert_almost_eq!(
+            camera.screen_ray(0.25, 0.25),
+            Ray {
+                pos: Vector::zero(),
+                dir: Vector {
+                    x: -0.5,
+                    y: 0.25,
+                    z: -1.0,
+                }
+                .normalized(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_unitvector_reflection() {
+        assert_almost_eq!(
+            Vector {
+                x: -1.0,
+                y: -1.0,
+                z: -1.0,
+            }
+            .normalized()
+            .reflected(
+                &Vector {
+                    x: 0.0,
+                    y: 1.0,
+                    z: 0.0,
+                }
+                .normalized()
+            ),
+            Vector {
+                x: -1.0,
+                y: 1.0,
+                z: -1.0,
+            }
+            .normalized()
+        );
+    }
+
+    #[test]
+    fn test_closest_intersection() {
+        let spheres = [
+            Sphere {
+                center: Vector::zero(),
+                radius: 1.0,
+                color: Color::new_black(),
+            },
+            Sphere {
+                center: Vector {
+                    x: 10.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                radius: 1.0,
+                color: Color::new_black(),
+            },
+        ];
+        assert_almost_eq!(
+            closest_intersection(
+                &spheres,
+                &Ray {
+                    pos: Vector {
+                        x: -100.0,
+                        y: 0.0,
+                        z: 0.0,
+                    },
+                    dir: Vector::unitx(),
+                }
+            ),
+            Some(Intersection {
+                position: Vector {
+                    x: -1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                normal: -Vector::unitx(),
+                sphere: &spheres[0],
+            }),
+        );
+
+        assert_almost_eq!(
+            closest_intersection(
+                &spheres,
+                &Ray {
+                    pos: Vector {
+                        x: 100.0,
+                        y: 0.0,
+                        z: 0.0,
+                    },
+                    dir: -Vector::unitx(),
+                },
+            ),
+            Some(Intersection {
+                position: Vector {
+                    x: 11.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                normal: Vector::unitx(),
+                sphere: &spheres[1],
+            }),
+        );
+
+        assert_almost_eq!(
+            closest_intersection(
+                &spheres,
+                &Ray {
+                    pos: Vector {
+                        x: 100.0,
+                        y: 0.0,
+                        z: 0.0
+                    },
+                    dir: Vector::unitx()
+                },
+            ),
+            None,
+        );
+    }
+
+    #[test]
+    fn test_trace_ray() {
+        let spheres = [
+            Sphere {
+                center: Vector {
+                    x: 2.0,
+                    y: 1.0,
+                    z: 1.0,
+                },
+                radius: 1.0,
+                color: Color::new_red(),
+            },
+            Sphere {
+                center: Vector {
+                    x: 4.0,
+                    y: 4.0,
+                    z: 1.0,
+                },
+                radius: 1.0,
+                color: Color::new_green(),
+            },
+        ];
+        let ray = Ray {
+            pos: Vector {
+                x: 1.0,
+                y: 3.0,
+                z: 1.0,
+            },
+            dir: Vector {
+                x: 1.0,
+                y: -1.0,
+                z: 0.0,
+            }
+            .normalized(),
+        };
+        assert_almost_eq!(
+            trace_ray(&spheres, &ray, 0),
+            45.0f32.to_radians().cos() * Color::new_red(),
+        );
+        assert_almost_eq!(
+            trace_ray(&spheres, &ray, 1),
+            45.0f32.to_radians().cos() * (Color::new_red() + Color::new_green()),
+        );
+    }
+}

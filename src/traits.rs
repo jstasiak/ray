@@ -4,6 +4,7 @@ pub trait AlmostEqual {
 
 // Modified version of the original assert_eq implementation from
 // https://github.com/rust-lang/rust/blob/909f5a049415a815b23502a5498de9a99bbf276b/src/libcore/macros.rs
+#[macro_export]
 macro_rules! assert_almost_eq {
     ($left:expr, $right:expr) => ({
         match (&$left, &$right) {
