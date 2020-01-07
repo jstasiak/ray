@@ -1,4 +1,4 @@
-use raytracer::{image_to_file, render, Camera, Color, Material, Radians, Sphere, Vector};
+use ray::{image_to_file, render, Camera, Color, Material, Radians, Sphere, Vector};
 use std::env;
 use std::fs::File;
 use std::io::{self, Write};
